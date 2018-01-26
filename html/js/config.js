@@ -1,0 +1,1 @@
+var pgisserverUrl = "http://10.20.2.118:8080/mslocationserver/";

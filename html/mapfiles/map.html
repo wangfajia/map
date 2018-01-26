@@ -1,0 +1,849 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<!-- saved from url=(0093)http://10.246.145.167:8080/OneMapServer/rest/services/base-map-vector-globe/MapServer -->
+<HTML><HEAD><META content="IE=11.0000" http-equiv="X-UA-Compatible">
+<TITLE>ArcGIS JavaScript API: base-map-world-d500</TITLE>
+<META content="text/html; charset=utf-8" http-equiv=Content-Type>
+<META content=IE=7 http-equiv=X-UA-Compatible>
+<!--map css 
+<link href="css/DrawingManager_min.css" rel="stylesheet" type="text/css" />
+<link rel="stylesheet" type="text/css" href="css/bmap.css" />
+-->
+<!--search and tools css-->
+<link href="css/normalize.css" type="text/css" rel="stylesheet" />
+<link href="css/zTreeStyle/zTreeStyle.css" type="text/css" rel="stylesheet" />
+<link href="css/main.css" type="text/css" rel="stylesheet" />
+
+<script language="javascript" src="js/jquery-1.9.1.min.js"></script>
+<script language="javascript" src="js/jquery.ztree.all-3.5.min.js"></script>
+<script type="text/javascript" src="api/config.js"></script>
+<script type="text/javascript" src="js/mapList.js"></script>
+<script type="text/javascript" src="js/cookieTool.js"></script>
+<script type="text/javascript" src="js/zTreeEvnt.js"></script>
+<script type="text/javascript" src="js/datePicker/WdatePicker.js"></script>
+<script type="text/javascript" src="js/jquery-ui_1.11.4.js"></script>
+		
+<script type="text/javascript" src="js/ztree.js"></script>
+<script type="text/javascript" src="js/track.js"></script>
+
+
+<script type="text/javascript" src="js/testdata.js"></script>
+<!-- 
+<link rel="stylesheet" href="http://10.90.74.5:8080/arcgis_js_v39_api/arcgis_js_api/library/3.9/3.9/js/esri/css/esri.css">
+<SCRIPT type=text/javascript src="http://10.90.74.5:8080/arcgis_js_v39_api/arcgis_js_api/library/3.9/3.9/init.js"></SCRIPT>
+ -->
+<link rel="stylesheet" href="http://10.246.146.31:81/arcgis_js_api/library/3.16/3.16compact/dijit/themes/tundra/tundra.css">
+<link rel="stylesheet" href="http://10.246.146.31:81/arcgis_js_api/library/3.16/3.16compact/esri/css/esri.css">
+
+<script type="text/javascript">
+       // window.onerror = (function(err) { alert("出现错误：\r\n" + err); });
+
+        dojoConfig = {//指定自定义的Dojo类存放路径
+            parseOnLoad: true,
+            packages: [{
+                name: 'layerEx',
+                location: "http://10.246.146.31:81/LoadMap/scripts/layerEx"
+            }]
+        };
+    </script>
+<SCRIPT type=text/javascript src="http://10.246.146.31:81/arcgis_js_api/library/3.16/3.16compact/init.js"></SCRIPT>
+<script type="text/javascript" src="js/bmap.js"></script>
+<script type="text/javascript" src="js/operate.js"></script>
+<SCRIPT type=text/javascript>
+    
+	  dojo.require("esri.map");
+	  dojo.require("dijit.layout.ContentPane");  
+	  dojo.require("dijit.layout.BorderContainer");
+	  dojo.require("esri.layers.GraphicsLayer");
+	  dojo.require("layerEx.TDTLayer");
+	  dojo.require("esri.toolbars.draw");
+	  var graphicLayer; 
+	  /* 
+	  function Init() {
+	  	
+			map = new esri.Map("map");    
+			var layer = new esri.layers.ArcGISTiledMapServiceLayer("http://10.246.2.54/ArcGIS/rest/services/base-map-world-d500/MapServer");  
+			
+			map.addLayer(layer);
+			 
+			var resizeTimer;                            
+			 
+			
+			graphicLayer = new esri.layers.GraphicsLayer();
+        //把图层添加到地图上
+      map.addLayer(graphicLayer);
+      var location = new esri.geometry.Point(119.989076, 30.385077, map.spatialReference);
+      map.centerAndZoom(location, 8);
+      addDataToTree();
+		}  
+		*/
+</SCRIPT>
+<script type="text/javascript">
+		var selectListType = 'user';//user, video
+		var isSetCenter = false;
+		var closeDetailFlag = true;//是否关闭信息窗口
+		var curMarker;
+		var searchText='';
+		var nodeBySearch;
+		var IDMark_SEARLI = "_searli";
+		var fullScreenFlag = false;
+		
+		/**********初始化**************/
+		document.onkeydown=function(e){
+			if(e.keyCode ==27){
+				if(getCookie("full")=="1"){
+					document.getElementById("screen_map_back").click();
+				}
+			}
+		}
+		$(function(){
+			$('.searchbox-text').keydown(function(event){
+				if(event.keyCode ==13){
+					openSearchResult();
+					getSearchResult();
+				}
+			});
+			$('.searchbox-text').focus(function(event){
+				if($(this).hasClass('searchbox-text-default')){
+					if(searchText!=null && searchText!=''){
+						$(this).val(searchText);
+						$(this).select();
+					}else{
+						$(this).val('');
+					}
+					$(this).removeClass('searchbox-text-default');
+				}
+			});
+			$('.searchbox-text').blur(function(event){
+				var value = $(this).val();
+				if(value==null || value==''){
+					$(this).val('地图搜索');
+					$(this).addClass('searchbox-text-default');
+				}
+			});
+			$('.searchbox-button').bind('click', function(){
+					openSearchResult();
+					getSearchResult();
+			});
+			bindEvttoCtrlList();
+			/***********通讯录菜单栏**********/
+			$('#list ul li').click(function(){
+				$(this).addClass('current');
+				$(this).siblings().removeClass('current');
+				$(this).children().find('span').addClass('selected');
+				$(this).siblings().children().find('span').removeClass('selected');
+			});
+			/****************************/
+			//dojo.addOnLoad(initMap);
+			
+			dojo.addOnLoad(getTDTToken);
+			
+			//initMap();
+			//bindEvtToMapTools();
+			//setDrawTypeToHander();
+			//resize();
+			//window.onresize=function(){resize();};
+			/*if(getCookie("full")=="1"){	
+				$("#screen_map_full").css('display','none');
+				$("#screen_map_back").css('display','block');
+			} else {	
+				$("#screen_map_full").css('display','block');
+				$("#screen_map_back").css('display','none');
+			}*/
+			//initAccordion();
+			
+			$('#alert').mouseover(function(){
+				if($('#alert').css('display') == 'block') {//取消渐隐，并且透明度恢复默认值
+					clearInterval(dIntervalHidd);
+					clearTimeout(timeOutHidd);
+					$('#alert').css('opacity', '0.8');
+				}
+			}).mouseout(function(){
+				if($('#alert').css('display') == 'block') {//重新开启渐隐
+					delayHidden('alert', 0.8, 0.1, 2);
+				}
+			});
+
+			$('.close').mouseover(function(){
+				$('.close').attr('src', 'images/close_hover.png');
+			}).mouseout(function(){
+				$('.close').attr('src', 'images/close.png');
+			});
+
+			/*$("#allmap").droppable({
+				activeClass: "",
+				hoverClass: "dropshow_hover",
+				accept: ":not(.ui-sortable-helper)",
+				drop: function(event, ui) {
+				}
+			});*/
+			//initDatePicker();
+			
+			
+		});
+	</script>
+
+	<body>
+		<div class="body">
+			<div id="map"></div>
+			<div class="operPanel">
+				<div class="nav">
+					<div class="nav-left">
+						<a id="ctrl-list"> <span></span> </a>
+					</div>
+					<div class="nav-right">
+						<span class="searchbox"> <input type="text"
+								class="searchbox-text searchbox-text-default" value="地图搜索" />
+							<span class="searchbox-button"></span> 
+						</span>
+						<span class="searchTitle searchbox-text-default"
+							style="text-aligh: center; display: none;">
+						</span>
+					</div>
+				</div>
+				<div id="operPanel-content" class="operPanel-content"
+					style="display: none;">
+					<div id="list" class="list" style="display: block;">
+						<div class="list-left">
+							<ul>
+								<li style="top: 0px;" class="current">
+									<a onclick="showTelList();"><span class="first selected"></span>
+										<h5>
+											通讯录
+										</h5> 
+									</a>
+								</li>
+								<li style="top: 90px;">
+									<a onclick="showVideoList();"><span class="second"></span>
+										<h5>
+											视频
+										</h5> 
+									</a>
+								</li>
+							</ul>
+						</div>
+						<div class="list-right">
+							<div id="telList">
+								<div style="height: 90%; width: 100%; overflow-x:hidden; overflow-y: auto;">
+									<div  class="listAccordion">
+										
+										<div>
+											<ul id="listTree" class="ztree"></ul>
+										</div>
+									</div>
+								</div>
+								<div id="user_tree_tools"
+									style="width: 100%; height: 10%; position: relative; display: none;">
+									<p
+										style="padding: 0; margin: 0; position: absolute; bottom: 5px; right: 5px;">
+										<input type="button" class="def-btn" id="markBtn_list"
+											value="呼叫" onclick="makeCallsByChecked('audio');" />
+										<input type="button" class="def-btn video" id="cancleMarkBtn_list"
+											value="查视频" onclick="showVideosByChecked('');" />
+									</p>
+								</div>
+							</div>
+							<div id="videoList" style="display: none;">
+								<div style="height: 90%; width: 100%; overflow-x:hidden; overflow-y: auto;">
+									<div class="listAccordion">
+										
+										<div>
+											<ul id="videoTree" class="ztree"></ul>
+										</div>
+									</div>
+								</div>
+								<div id="video_tree_tools"
+									style="width: 100%; height: 10%; position: relative; display: none;">
+									<p
+										style="padding: 0; margin: 0; position: absolute; bottom: 5px; right: 5px;">
+										<input type="button" class="def-btn" id="cancleMarkBtn_video"
+											value="查视频" onclick="showVideosByChecked('');" />
+									</p>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div id="searchResult" class="searchResult" style="display: none;">
+						<div class="res-top">
+							<span class="back"><a onclick="backtoList();"><font
+									style="font-weight: 900;">&lt;</font>&nbsp;返回</a> </span>
+							<span class="total">0个结果</span>
+						</div>
+						<div class="res-body">
+							<ul id="search-result">
+							</ul>
+							<div id='allSelect' style="display: none;">
+								<input class='allSelect' type='checkbox' /><span class='selectAll'>全选 / 反选</span>
+							</div>
+							<p id="searchRes-tools" class="tree_tools">
+							</p>
+						</div>
+					</div>
+				</div>
+				<!-- 轨迹查询 -->
+				<div id="searchTrack" class="searchTrack" style="display: none;">
+					<div class="res-top">
+						<span class="back"><a onclick="backtoList();"><font
+								style="font-weight: 900;">&lt;</font>&nbsp;返回</a> </span>
+					</div>
+					<div class="res-body" style="font-size: 13px;">
+						<input type="hidden" id="gpsbh" name="gpsbh" value="" />
+						<div>
+							&nbsp;
+						</div>
+						<div class="track_time">
+							开始时间：&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+							<input type="text" readonly="readonly" class="Wdate"
+								style="width: 180px; font-size: 13px; height: 30px;"
+								id="start_time" name="start_time"
+								 />
+						</div>
+						<div>
+							&nbsp;
+						</div>
+						<div class="track_time">
+							结束时间：&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+							<input type="text" readonly="readonly" class="Wdate"
+								style="width: 180px; font-size: 13px; height: 30px;"
+								id="end_time" name="end_time"
+								/>
+						</div>
+						<div>
+							&nbsp;
+						</div>
+						<div style="text-align: right; padding-right: 20px;">
+							<input type="button" class="def-btn" value="查询"
+								onclick="showLocationTrace()" />
+						</div>
+					</div>
+				</div>
+
+			</div>
+			<div class="BMapLib_Drawing_def BMap_noprint anchorTR"
+				style="top: 35px; right: 0px; bottom: auto; margin-top: 0px; margin-left: 0px; position: absolute; z-index: 10; transform: scale(0.8); -moz-transform: scale(0.8); -o-transform: scale(0.8); -webkit-transform: scale(0.8);">
+				<div class="BMapLib_Drawing_panel_def">
+					<a title="拖动地图" class="BMapLib_box_def BMapLib_hander_def"
+						onfocus="this.blur()" id="hander_map" href="javascript:void(0)"><span>移动</span>
+					</a>
+					<a title="画圆" class="BMapLib_box_def BMapLib_circle_def "
+						onfocus="this.blur()" id="circle_map" href="javascript:void(0)"><span>圆形</span>
+					</a>
+					<a title="画矩形" class="BMapLib_box_def BMapLib_rectangle_def "
+						onfocus="this.blur()" id="rectangle_map" href="javascript:void(0)"><span>矩形</span>
+					</a>
+					<a title="画多变形" class="BMapLib_box_def BMapLib_polygon_def "
+						onfocus="this.blur()" id="polygon_map" href="javascript:void(0)"><span>多边
+					</span> </a>
+					<a title="设置中心点" class="BMapLib_box_def BMapLib_setCenter_def"
+						onfocus="this.blur()" id="setCerter_map" href="javascript:void(0)"><span>默认</span>
+					</a>
+					<a title="刷新" class="BMapLib_box_def BMapLib_refresh_def "
+						onfocus="this.blur()" id="refresh_map" href="javascript:void(0)"><span>刷新</span>
+					</a>
+					<a title="全屏"
+						class="BMapLib_box_def BMapLib_screen_def_full BMapLib_last_def"
+						onfocus="this.blur()" id="screen_map_full"
+						href="javascript:void(0)"><span>全屏</span> </a>
+					<a title="全屏"
+						class="BMapLib_box_def BMapLib_screen_def_back BMapLib_last_def"
+						onfocus="this.blur()" id="screen_map_back" style="display: none;"
+						href="javascript:void(0)"><span>恢复</span> </a>
+				</div>
+			</div>
+			<!-- <div id='detail' style='width: 360px; height: 125px; display: none;'">
+			</div> -->
+			<div id='detail' style='width: 360px; display: block;'">
+			</div>
+		</div>
+		<div id="alert" >
+			<div id='closeAlert' onclick='closeAlert()' ><img class="close" src='images/close.png' /></div>
+			<div id='alertMsg'>设置成功</div>
+		</div>
+		<div id="confirm">
+			<div id="confirmMsg">确定要将当前位置设置为默认中心点吗?</div>
+			<div id="oper">
+				<input type="button" class='confirm-btn' value="确定" onclick="setCenter()" />
+				<input type="button" class='confirm-btn' value="取消" onclick="closeConfirm()" />
+			</div>
+		</div>
+		<div style="position:absolute; left:50px; z-index: 10; bottom:10px; ">
+	        <img id="imgRaster" src="images/yximage.png"  alt="影像底图" title="影像底图" style="width: 49px; height: 48px; cursor: pointer;"/>
+	        <img id="imgVector" src="images/vector.png"  alt="矢量底图" title="矢量底图" style="width: 49px; height: 48px; cursor: pointer;" />
+	        <img id="imgTerrain" src="images/terrain.png"  alt="地形底图" title="地形底图" style="width: 49px; height: 48px; cursor: pointer;" />
+    	</div>
+	</body>
+<script type="text/javascript">
+/***********list start*****************/
+//信息窗口内容模板
+var listOverlays=[];
+function getListOverLayByTypeandID(type, id){
+	var res;
+	for(var i=0; i<listOverlays.length; i++){
+		if(listOverlays[i].type == type && listOverlays[i].id == id){
+			res =  listOverlays[i];
+			break;
+		}
+	}
+	return res;
+}
+
+function setListOverLayByTypeandID(type, id, new_overlay){
+	for(var i=0; i<listOverlays.length; i++){
+		if(listOverlays[i].type == type && listOverlays[i].id == id){
+			listOverlays[i] = new_overlay;
+			break;
+		}
+	}
+}
+
+function getInfoByNode(treeNode){
+  	var info = '';
+  	if(treeNode.type == 'operator'){
+  		var videoFlag=0;//是否显示视频呼叫按钮 0：不显示， 1显示
+  		if(treeNode.video && treeNode.video.length >0){
+  			videoFlag=1;
+  		}
+  		var groupsIDs = [{"groupID":treeNode.parentID}];
+		var groupName = getGroupsNamesByGroupIDs(groupsIDs, 'operator');
+  		if(treeNode.viceTel == null || treeNode.viceTel == ''){
+		info = treeNode.pos_x+'|'+treeNode.pos_y+'|'+treeNode.name+'|'+ groupName
+				+'|'+treeNode.mainTel+'|'+treeNode.viceTel+'|'+treeNode.dutyTel+'|'+treeNode.operatorID+'|'+treeNode.mainTel+'|'+treeNode.gpsBH+'|'+videoFlag;
+	} else  {
+		info = treeNode.pos_x+'|'+treeNode.pos_y+'|'+treeNode.name+'|'+ groupName
+				+'|左:'+treeNode.mainTel+'|右:'+treeNode.viceTel+'|'+treeNode.dutyTel+'|'+treeNode.operatorID+'|'+treeNode.mainTel+'|'+treeNode.gpsBH+'|'+videoFlag;
+	}
+  	} else if(treeNode.type == 'employee') {
+  		var groupName = getGroupsNamesByGroupIDs(treeNode.group, 'employee');
+  		info =treeNode.pos_x+'|'+treeNode.pos_y+'|'+treeNode.name+'|'+groupName+'|'+treeNode.defaultNo+'|'+treeNode.employeeID+'|'+treeNode.gpsBH;
+  	} else if(treeNode.type=='video') {
+  		var groupsIDs = [{"groupID":treeNode.parentID}];
+	var groupName = getGroupsNamesByGroupIDs(groupsIDs, 'video');
+	info = treeNode.pos_x+'|'+treeNode.pos_y+'|'+treeNode.name+'|'+ groupName
+					+'|'+treeNode.videoID+'|'+treeNode.puid+'|'+treeNode.gpsBH;
+  	}
+  	return info;
+}
+   
+function getDemoDetailHtml(obj) {
+   	var demoHtml= '';
+   	if(obj && obj.type == 'operator'){
+   		demoHtml = "<div class='panel'>"+
+          		"<span id='close' class='close' onclick='closeDetail();' ><img src='img/close.png' /></span>"+
+           	"<div  style='height:60%;'>"+
+               	"<span class='picture'><img align='middle' style='max-height:90px; max-width:130px;' src='images/person.png' /></span>"+
+                   "<span class='intro'>"+
+                   	"<font face='Arial, Helvetica, sans-serif' style='padding:0px; margin:0px; line-height:18px; font-size:12px; color:rgb(77,77,77); '>@GROUP</font>"+
+                   	//"<a  style='font-size:12px; color:rgb(61,109,204); margin-left:5px; text-decoration:none;cursor: pointer; '" +
+              			//"onmouseover='this.style.textDecoration=&quot;none&quot;'" +
+              			//"onmouseout='this.style.textDecoration=&quot;none&quot;'" +
+           			//"</a>" +  
+                   	"<br/>"+
+                   	"<font style='padding:0px; margin:0px; line-height:18px; font-size:12px; color:rgb(77,77,77); '>@NAME</font>"+
+                   	"<br/>"+
+           			"<font style='padding:0px; margin:0px; line-height:18px; font-size:12px; color:rgb(77,77,77); '>@MAINTEL</font>&nbsp;&nbsp;&nbsp;"+
+           			"<font style='padding:0px; margin:0px; line-height:18px; font-size:12px; color:rgb(77,77,77); '>@VICETEL</font>"+
+           			"<br/>"+
+           			/* "<font style='color: #999999;'>@POSX, @POSY</font>"+
+                   	"<br/>"+ */
+                   "</span>"+
+               "</div>"+
+               "<div id='btns-detail' style=' letter-spacing:1px; font-size:12px; position:absolute; bottom:2px; right:5px;'>"+
+               	"<span><input type='button' class='detail-btn' value='语音呼叫' onclick='makeCall(&quot;audio&quot;, &quot;@ID&quot;, &quot;operator&quot;, &quot;@TELFORCALL&quot;)'/></span>"+
+               	"<span><input type='button' class='detail-btn' value='视频呼叫' onclick='makeCall(&quot;video&quot;, &quot;@ID&quot;, &quot;operator&quot;, &quot;@TELFORCALL&quot;)'/></span>";
+           if(obj && obj.video && obj.video.length>0){
+               demoHtml = demoHtml +"<span><input type='button' class='detail-btn' id='showVideoBtn' value='查视频' onclick='ShowVideo(&quot;&quot;, &quot;@ID&quot;, &quot;operator&quot;)' /></span>";
+           }
+            demoHtml=demoHtml+"<span><input type='button' class='detail-btn-last detail-btn-last-up' id='moreBtn'  onclick='operatorMore()' value='更多'/></span>"+
+                  // "<div id='moreContent' style='position: absolute; right: -1px; bottom: 29px; display: none;' >";
+           			 "<div id='moreContent' style=' position: relative;   display: none; float:right;' >";
+           demoHtml =demoHtml+
+                   	"<p><input type='button' class='detail-btn' value='移除' onclick='removeLocationMarker(&quot;operator&quot;,&quot;@ID&quot;)'/></p>"+
+           			"<p><input type='button' class='detail-btn' value='详情' onclick='showDetail(&quot;operator&quot;,&quot;@ID&quot;);' /></p>";
+          if(obj && obj.gpsBH){
+              demoHtml=demoHtml+"<p><input type='button' class='detail-btn' value='查轨迹' onclick='showTrack(&quot;@gpsBH&quot;)'/></p>";
+          }
+          demoHtml =demoHtml+
+                   "</div>"+
+               "</div>"+
+           "</div>";
+	} else if(obj && obj.type == 'employee') {
+	    demoHtml = "<div class='panel'>"+
+          		"<span id='close' class='close' onclick='closeDetail();' ><img src='img/close.png' /></span>"+
+           	"<div  style='height:60%;'>"+
+               	"<span class='picture'><img align='middle' style='max-height:90px; max-width:130px;' src='images/person.png' /></span>"+
+                   "<span class='intro'>"+
+                   	"<font face='Arial, Helvetica, sans-serif' style='padding:0px; margin:0px; line-height:18px; font-size:12px; color:rgb(77,77,77); '>@GROUP</font>"+
+                   	//"<a  style='font-size:12px; color:rgb(61,109,204); margin-left:5px; text-decoration:none;cursor: pointer; '" +
+              			//"onmouseover='this.style.textDecoration=&quot;none&quot;'" +
+              			//"onmouseout='this.style.textDecoration=&quot;none&quot;'" +
+           			//"</a>" + 
+                   	"<br/>"+
+                   	"<font style='padding:0px; margin:0px; line-height:18px; font-size:12px; color:rgb(77,77,77); '>@NAME</font>"+
+                   	"<br/>"+
+           			"<font style='padding:0px; margin:0px; line-height:18px; font-size:12px; color:rgb(77,77,77); '>@DEFAULTNO</font>"+
+           			"<br/>"+
+                   	/* "<font style='color: #999999;'>@POSX, @POSY</font>"+ */
+                   "</span>"+
+               "</div>"+
+               "<div id='btns-detail' style='letter-spacing:1px; font-size:12px; position:absolute; bottom:2px; right:5px;'>"+
+               	"<span><input type='button' class='detail-btn' value='语音呼叫' onclick='makeCall(&quot;audio&quot;, &quot;@ID&quot;, &quot;employee&quot;, &quot;@DEFAULTNO&quot;)' /></span>"+
+               	"<span><input type='button' class='detail-btn' value='视频呼叫' onclick='makeCall(&quot;video&quot;, &quot;@ID&quot;, &quot;employee&quot;, &quot;@DEFAULTNO&quot;)'/></span>";
+               if(obj && obj.deviceType && obj.deviceType=='poc'){
+               	demoHtml = demoHtml+
+               	"<span><input type='button' class='detail-btn' value='对讲' onclick='makeCall(&quot;half-audio&quot;, &quot;@ID&quot;, &quot;employee&quot;, &quot;@DEFAULTNO&quot;)' /></span>"; 
+               }
+           if(obj && obj.video && obj.video.length>0){
+           	demoHtml = demoHtml+
+               	"<span><input type='button' class='detail-btn' value='查视频' onclick='ShowVideo(&quot;&quot;, &quot;@ID&quot;, &quot;employee&quot;)' /></span>";            
+           }
+
+           demoHtml = demoHtml+
+               	"<span><input type='button' class='detail-btn-last detail-btn-last-up' id='moreBtn'  onclick='operatorMore()' value='更多'/></span>"+
+                   //"<div id='moreContent' style='position: absolute; right: -1px; bottom: 29px; display: none;' >";
+           "<div id='moreContent' style='position: relative;  display: none;float:right;' >";
+          	demoHtml = demoHtml+
+                   	"<p><input type='button' class='detail-btn' value='移除' onclick='removeLocationMarker(&quot;employee&quot;,&quot;@ID&quot;)'/></p>"+
+                   	"<p><input type='button' class='detail-btn' value='详情' onclick='showDetail(&quot;employee&quot;,&quot;@ID&quot;);' /></p>";
+           if(obj && obj.gpsBH){
+            	demoHtml = demoHtml+
+                   	"<p><input type='button' class='detail-btn' value='查轨迹' onclick='showTrack(&quot;@gpsBH&quot;)'/></p>";           
+           }
+           
+           demoHtml = demoHtml+
+                   "</div>"+
+               "</div>"+
+           "</div>"; 
+	} else if(obj && obj.type == 'video') {
+		demoHtml = "<div class='panel'>"+
+          		"<span id='close' class='close' onclick='closeDetail();' ><img src='img/close.png' /></span>"+
+           	"<div  style='height:60%;'>"+
+               	"<span class='picture'><img align='middle' style='max-height:90px; max-width:130px;' src='images/video.png' /></span>"+
+                   "<span class='intro'>"+
+                   	"<font face='Arial, Helvetica, sans-serif' style='padding:0px; margin:0px; line-height:18px; font-size:12px; color:rgb(77,77,77); '>@GROUP</font>" +
+                   	//"<a style='font-size:12px; color:rgb(61,109,204); margin-left:5px; text-decoration:none;cursor: pointer;'" +
+              			//"onmouseover='this.style.textDecoration=&quot;none&quot;'" +
+              			//"onmouseout='this.style.textDecoration=&quot;none&quot;'" +
+           			//"</a>" + 
+                   	"<br/>"+
+                   	"<font style='padding:0px; margin:0px; line-height:18px; font-size:12px; color:rgb(77,77,77); '>@NAME</font><br/>";
+           if(obj && obj.puid){
+            demoHtml=demoHtml+        	
+                   	"<font style='padding:0px; margin:0px; line-height:18px; font-size:12px; color:rgb(77,77,77); '>@PUID</font>"+
+                   	"<br/>";           
+           }
+           demoHtml=demoHtml+  
+                   	/* "<font style='color: #999999;'>@POSX, @POSY</font>"+ */
+                   "</span>"+
+               "</div>"+
+               "<div id='btns-detail' style='letter-spacing:1px; font-size:12px; position:absolute; bottom:2px; right:5px;'>"+
+               	"<span><input type='button' class='detail-btn' value='查视频' onclick='ShowVideo(&quot;&quot;, &quot;@ID&quot;, &quot;video&quot;)' /></span>"+
+               	"<span><input type='button' class='detail-btn-last detail-btn-last-up' id='moreBtn'  onclick='operatorMore()' value='更多'/></span>"+
+                   //"<div id='moreContent' style='position: absolute; right: -1px; bottom: 29px; display: none;' >";
+                   "<div id='moreContent' style='position: relative;  display: none; float:right;' >";
+                   demoHtml=demoHtml+
+                   	"<p><input type='button' class='detail-btn' value='移除' onclick='removeLocationMarker(&quot;video&quot;,&quot;@ID&quot;)'/></p>"+
+                   	"<p><input type='button' class='detail-btn' value='详情' onclick='showDetail(&quot;video&quot;,&quot;@ID&quot;);' /></p>";
+                   if(obj && obj.gpsBH){
+                    demoHtml=demoHtml+
+                    "<p><input type='button' class='detail-btn' value='查轨迹' onclick='showTrack(&quot;@gpsBH&quot;)'/></p>";
+                   }
+                   demoHtml=demoHtml+	
+                   "</div>"+
+               "</div>"+
+           "</div>";
+	}
+	return demoHtml;
+}
+   
+function getDetailHtml(type, info, obj){
+	var infoHtml;
+	info=getInfoByNode(obj);
+	if (type == 'operator') {
+         var strs = new Array();
+         //获取到要显示的内容
+         var sUserContent = getDemoDetailHtml(obj);
+         strs = info.split("|"); //字符分割{POSX|POSY|NAME|GROUP|MAINTEL|VICETEL|DUTYTEL|ID|TELFORCALL|gpsBH}
+         for (i = 0; i < strs.length; i++) {
+             switch (i) {
+                 case 0:
+                     sUserContent = sUserContent.replace(/@POSX/g, strs[i]);
+                     break;
+                 case 1:
+                     sUserContent = sUserContent.replace(/@POSY/g, strs[i]);
+                     break;
+                 case 2:
+                     sUserContent = sUserContent.replace(/@NAME/g, strs[i]);
+                     break;
+                 case 3:
+                     sUserContent = sUserContent.replace(/@GROUP/g, strs[i]);
+                     break;
+                 case 4:
+                     sUserContent = sUserContent.replace(/@MAINTEL/g, strs[i]);
+                     break;
+                 case 5:
+                     sUserContent = sUserContent.replace(/@VICETEL/g, strs[i]);
+                     break;        
+                 case 6:
+                     sUserContent = sUserContent.replace(/@DUTYTEL/g, strs[i]);
+                     break;                                         
+                 case 7:
+                     sUserContent = sUserContent.replace(/@ID/g, strs[i]);
+                     break; 
+				case 8:
+                     sUserContent = sUserContent.replace(/@TELFORCALL/g, strs[i]);
+                     break; 
+				case 9:
+                     sUserContent = sUserContent.replace(/@gpsBH/g, strs[i]);
+                     break;           
+                 default:
+                     break;
+             }
+         }
+         infoHtml = sUserContent;
+     } else if(type == 'employee') {
+     	var strs = new Array();
+        var sEmployeeContent = getDemoDetailHtml(obj);
+        strs = info.split("|"); //字符分割{POSX|POSY|NAME|GROUP|DEFAULTNO|ID|gpsBH}
+        for (i = 0; i < strs.length; i++) {
+        	switch (i) {
+                 case 0:
+                     sEmployeeContent = sEmployeeContent.replace(/@POSX/g, strs[i]);
+                     break;
+                 case 1:
+                     sEmployeeContent = sEmployeeContent.replace(/@POSY/g, strs[i]);
+                     break;
+                 case 2:
+                     sEmployeeContent = sEmployeeContent.replace(/@NAME/g, strs[i]);
+                     break;
+                 case 3:
+                     sEmployeeContent = sEmployeeContent.replace(/@GROUP/g, strs[i]);
+                     break;
+                 case 4:
+                     sEmployeeContent = sEmployeeContent.replace(/@DEFAULTNO/g, strs[i]);
+                     break;  
+                 case 5:
+                  sEmployeeContent = sEmployeeContent.replace(/@ID/g, strs[i]);
+                  break;
+				 case 6:
+                     sEmployeeContent = sEmployeeContent.replace(/@gpsBH/g, strs[i]);
+                     break; 	                                                          
+                 default:
+                     break;
+             }
+         }
+       infoHtml = sEmployeeContent;
+     } else if(type == 'group') {
+    	 
+     } else if (type == 'video') {
+         var strs = new Array();
+         var  sVideoContent = getDemoDetailHtml(obj);
+         strs = info.split("|"); //字符分割{POSX|POSY|NAME|GROUP|ID|PUID|gpsBH}
+         for (i = 0; i < strs.length; i++) {
+             switch (i) {
+             	case 0:
+                     sVideoContent = sVideoContent.replace(/@POSX/g, strs[i]);
+                     break;
+                 case 1:
+                     sVideoContent = sVideoContent.replace(/@POSY/g, strs[i]);
+                     break;
+                 case 2:
+                     sVideoContent = sVideoContent.replace(/@NAME/g, strs[i]);
+                     break;
+                 case 3:
+                     sVideoContent = sVideoContent.replace(/@GROUP/g, strs[i]);
+                     break;
+                 case 4:
+                     sVideoContent = sVideoContent.replace(/@ID/g, strs[i]);
+                     break;
+                 case 5:
+                     sVideoContent = sVideoContent.replace(/@PUID/g, strs[i]);
+                     break; 
+				case 6:
+                     sVideoContent = sVideoContent.replace(/@gpsBH/g, strs[i]);
+                     break;                            
+                 default:
+                     break;
+             }
+         }
+		infoHtml = sVideoContent;
+     }
+	return infoHtml;
+}
+       //添加信息窗口
+function mapAddListInfoWindow(marker, id, type, info, obj) {
+	 // 创建信息窗口对象
+	//marker.addEventListener("click", function () {
+	    closeDetailFlag = false;
+	    var infoHtml = getDetailHtml(type, info, obj);
+	    showMarkInfoWindow(infoHtml);
+	    zoomOutMarker(marker, type, id);
+	    var point = marker.geometry;
+	    map.centerAt(point);
+//	});
+}
+   
+function addMarkListToMap(pos_x, pos_y) {
+   	if($('#list').css('display')=='block') {
+    	if(selectListType == 'user') {
+    		var treeObj = $.fn.zTree.getZTreeObj("listTree");
+	    	var nodes =  treeObj.getSelectedNodes();
+	    	if(nodes && nodes.length>0) {
+	    		if(nodes[0].type=='operator' ) {
+    				nodes[0].pos_x = pos_x;
+	    			nodes[0].pos_y = pos_y;
+	    			
+					var info = getInfoByNode(nodes[0]);
+					
+					mapAddListOverlayAndInfoWindow(nodes[0].pos_x, nodes[0].pos_y, nodes[0].operatorID, nodes[0].name, nodes[0].type, info, nodes[0], true);
+					
+	    			//通知客户端
+	    			var data = "{\"ID\":\""+nodes[0].operatorID+"\", \"pos_x\":\""+pos_x+"\",\"pos_y\":\""+pos_y+"\"}";
+	    			
+	    			try {
+						window.external.MapSetLocationEvent(nodes[0].type, data);
+					} catch (e) {
+					}
+					
+	    		} else if(nodes[0].type == 'employee' ) {
+    				nodes[0].pos_x = pos_x;
+	    			nodes[0].pos_y = pos_y;
+	    			var info = getInfoByNode(nodes[0]);
+					mapAddListOverlayAndInfoWindow(nodes[0].pos_x, nodes[0].pos_y, nodes[0].employeeID, nodes[0].name, 'employee', info, nodes[0], true);
+	    			//通知客户端
+	    			var data = "{\"ID\":\""+nodes[0].employeeID+"\", \"pos_x\":\""+pos_x+"\",\"pos_y\":\""+pos_y+"\"}";
+	    			try {
+						window.external.MapSetLocationEvent(nodes[0].type, data);
+					} catch (e) {
+						diyAlert('notify IDispatch error');
+					}
+	    		} else {
+	    			window.external.MapShowMsgEvent("请选择要标注的职员或者操作员");
+	    		}
+	    	} else {
+	    		window.external.MapShowMsgEvent("请选择要标注的职员或者操作员");
+	    	}
+    	} else if(selectListType == 'video') {
+    		var treeObj = $.fn.zTree.getZTreeObj("videoTree");
+	    	var nodes =  treeObj.getSelectedNodes();
+	    	if(nodes && nodes.length>0){
+	    		if(nodes[0].type=='video' ){
+    				nodes[0].pos_x = pos_x;
+	    			nodes[0].pos_y = pos_y;
+					var info = getInfoByNode(nodes[0]);
+					mapAddListOverlayAndInfoWindow(nodes[0].pos_x, nodes[0].pos_y, nodes[0].videoID, nodes[0].name, nodes[0].type, info, nodes[0], true);
+	    			//通知客户端
+	    			var data = "{\"ID\":\""+nodes[0].videoID+"\", \"pos_x\":\""+pos_x+"\",\"pos_y\":\""+pos_y+"\"}";
+	    			window.external.MapSetLocationEvent(nodes[0].type, data);
+		    	}else{
+		    		window.external.MapShowMsgEvent("请选择要标注的视频");
+	    		}
+	    	}else{
+	    		window.external.MapShowMsgEvent("请选择要标注的视频");
+	    	}
+    	}
+   	}else{
+   		if(nodeBySearch && nodeBySearch.length){
+   			var nodes = nodeBySearch;
+   			if(nodes[0].type=='operator' ){
+   				nodes[0].pos_x = pos_x;
+    			nodes[0].pos_y = pos_y;
+				var info = getInfoByNode(nodes[0]);
+				mapAddListOverlayAndInfoWindow(nodes[0].pos_x, nodes[0].pos_y, nodes[0].operatorID, nodes[0].name, nodes[0].type, info, nodes[0], true);
+    			//通知客户端
+    			var data = "{\"ID\":\""+nodes[0].operatorID+"\", \"pos_x\":\""+pos_x+"\",\"pos_y\":\""+pos_y+"\"}";
+    			try {
+					window.external.MapSetLocationEvent(nodes[0].type, data);
+				} catch (e) {
+				}
+				var id_searli =  nodes[0].operatorID + nodes[0].type + IDMark_SEARLI;
+				$('.'+id_searli).children('.icon01').css('display', 'none');
+				$('.'+id_searli).find('input:checkbox').attr('checked', false);
+				$('.'+id_searli).find('input:checkbox').removeAttr('disabled');
+    		}else if(nodes[0].type == 'employee' ){
+   				nodes[0].pos_x = pos_x;
+    			nodes[0].pos_y = pos_y;
+    			var info = getInfoByNode(nodes[0]);
+				mapAddListOverlayAndInfoWindow(nodes[0].pos_x, nodes[0].pos_y, nodes[0].employeeID, nodes[0].name, 'employee', info, nodes[0], true);
+    			//通知客户端
+    			var data = "{\"ID\":\""+nodes[0].employeeID+"\", \"pos_x\":\""+pos_x+"\",\"pos_y\":\""+pos_y+"\"}";
+    			try {
+					window.external.MapSetLocationEvent(nodes[0].type, data);
+				} catch (e) {
+					diyAlert('notify IDispatch error');
+				}
+    			var id_searli =  nodes[0].employeeID + nodes[0].type + IDMark_SEARLI;
+				$('.'+id_searli).children('.icon01').css('display', 'none');
+				$('.'+id_searli).find('input:checkbox').attr('checked', false);
+				$('.'+id_searli).find('input:checkbox').removeAttr('disabled');
+    		} else if (nodes[0].type == 'video'){
+    			nodes[0].pos_x = pos_x;
+    			nodes[0].pos_y = pos_y;
+				var info = getInfoByNode(nodes[0]);
+				mapAddListOverlayAndInfoWindow(nodes[0].pos_x, nodes[0].pos_y, nodes[0].videoID, nodes[0].name, nodes[0].type, info, nodes[0], true);
+    			//通知客户端
+    			var data = "{\"ID\":\""+nodes[0].videoID+"\", \"pos_x\":\""+pos_x+"\",\"pos_y\":\""+pos_y+"\"}";
+    			window.external.MapSetLocationEvent(nodes[0].type, data);
+    			var id_searli =  nodes[0].videoID + nodes[0].type + IDMark_SEARLI;
+				$('.'+id_searli).children('.icon01').css('display', 'none');
+				$('.'+id_searli).find('input:checkbox').attr('checked', false);
+				$('.'+id_searli).find('input:checkbox').removeAttr('disabled');
+    		}
+    		nodeBySearch=[];
+    		showOrHideResTools();
+    		$('.allSelect').attr('checked', $('.searchRstck:enabled').length == $('.searchRstck:checked').length);
+   		}
+   	}
+}
+   
+function removeLocationMarker(type, id){
+	//通知客户端
+	var data = "{\"ID\":\""+id+"\", \"pos_x\":\"\",\"pos_y\":\"\"}";
+	window.external.MapSetLocationEvent(type, data);
+	closeDetail();
+	var id_searli =  id + type + IDMark_SEARLI;
+	if($('.'+id_searli)){
+		$('.'+id_searli).children('.icon01').css('display', 'block');
+		if($('.'+id_searli).find('input:checkbox').attr('checked')){
+			$('.'+id_searli).find('input:checkbox').click();
+		}
+		$('.'+id_searli).find('input:checkbox').attr('disabled', true);
+		showOrHideResTools();
+	}
+}
+  
+function zoomOutMarker(marker, type, id){
+	if(curMarker){
+		zoomMarker(curMarker, 24);
+	}
+	var height= marker.symbol.height;
+	var width =marker.symbol.width;
+	curMarker = {"width":width,"height":height, "marker":marker, "type":type, "id":id};
+	var marker_out;
+	if(type == 'operator' || type == 'employee'){
+		marker_out = {"width":32,"height":50, "marker":marker};
+	}else if(type == 'video'){
+		marker_out = {"width":36,"height":43, "marker":marker};
+	}else{
+		marker_out = {"width":32,"height":50, "marker":marker};
+	}
+	zoomMarker(marker_out, 32);
+}
+  	
+function zoomMarker(marker_d, size){
+	if(marker_d){
+		var marker = marker_d.marker;
+		var width = marker_d.width;
+		var height = marker_d.height;
+		var url = marker.symbol.url;
+		var t1=url.lastIndexOf('_');
+		var t2=url.lastIndexOf('.');
+		var url_new  = url.substring(0, t1+1)+size+url.substring(t2, url.length);
+		//var icon = new BMap.Icon(url_new, new BMap.Size(width, height));
+		symbol = new esri.symbol.PictureMarkerSymbol(url_new, width, height);
+		symbol.setOffset(0, height/2);
+		marker.setSymbol(symbol);
+	}
+}
+/*************list  end******************/
+</script>
+
+</HTML>
